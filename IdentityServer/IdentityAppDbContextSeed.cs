@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace IdentityServer;
 
-public static class ApplicationDbContextSeed
+public static class IdentityAppDbContextSeed
 {
     public static async Task SeedDefaultUserAsync(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
     {
