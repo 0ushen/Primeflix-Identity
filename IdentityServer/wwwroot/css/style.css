@@ -589,4 +589,16 @@ label.valid {
     margin-right: 0px;
     margin-bottom: 10px; } }
 
+.color-success {
+    color: green;
+}
+
+.color-warning {
+    color: orange;
+}
+
+.color-error {
+    color: red;
+}
+
 /*# sourceMappingURL=style.css.map */

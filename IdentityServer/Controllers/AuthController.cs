@@ -1,9 +1,11 @@
 ﻿using System.Security.Claims;
 using Duende.IdentityServer.Services;
 using IdentityServer.Identity;
+using IdentityServer.Services;
 using IdentityServer.ViewModels.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using IdentityResult = IdentityServer.Enums.IdentityResult;
 
 namespace IdentityServer.Controllers;
 
@@ -12,15 +14,18 @@ public class AuthController : Controller
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IIdentityServerInteractionService _interactionService;
+    private readonly EmailService _emailService;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        IIdentityServerInteractionService interactionService)
+        IIdentityServerInteractionService interactionService,
+        EmailService emailService)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _interactionService = interactionService;
+        _emailService = emailService;
     }
 
     [HttpGet]
@@ -171,5 +176,54 @@ public class AuthController : Controller
         await _signInManager.SignInAsync(user, false);
 
         return Redirect(vm.ReturnUrl);
+    }
+
+    public ActionResult RetrievePassword(string returnUrl) => View("RetrievePassword", new RetrievePasswordViewModel
+    {
+        ReturnUrl = returnUrl
+    });
+
+    [HttpPost]
+    public async Task<ActionResult> RetrievePassword(RetrievePasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View("RetrievePassword", model);
+
+        bool succeeded;
+        var vm = new RetrievePasswordResultViewModel
+        {
+            ReturnUrl = model.ReturnUrl
+        };
+
+        var user = await _userManager.FindByEmailAsync(model.Email);
+
+        try
+        {
+
+            if (user != null)
+            {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+                var url = Url.Action(nameof(RetrievePassword), "Auth", new {userId = user.Id, token = token});
+
+                var emailSent = _emailService.SendChangePasswordLink(user.Email, url);
+
+                if (!emailSent)
+                    throw new Exception($"Change password email could not be sent to {user.Email}");
+
+                succeeded = true;
+            }
+            else
+            {
+                return View("RetrievePasswordResult", vm);
+            }
+        }
+        catch (Exception)
+        {
+            succeeded = false;
+            ModelState.AddModelError(string.Empty, $"An error occured while retrieving user's password");
+        }
+
+        return !succeeded ? View("RetrievePassword", model) : View("RetrievePasswordResult", vm);
     }
 }

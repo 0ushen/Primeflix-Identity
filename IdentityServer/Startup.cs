@@ -1,4 +1,5 @@
 using IdentityServer.Identity;
+using IdentityServer.Services;
 using Microsoft.AspNetCore.ApiAuthorization.IdentityServer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -78,6 +79,8 @@ public class Startup
                            .WithOrigins("http://localhost:4200");
                 });
         });
+
+        services.AddTransient<EmailService>();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
