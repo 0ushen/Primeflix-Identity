@@ -1,7 +1,6 @@
 ﻿namespace IdentityServer.ViewModels.Auth
 {
-    public class RetrievePasswordResultViewModel
+    public class RetrievePasswordResultViewModel : IdentityViewModel
     {
-        public string? ReturnUrl { get; init; }
     }
 }

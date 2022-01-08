@@ -1,7 +1,8 @@
-﻿namespace IdentityServer.ViewModels.Auth;
+﻿using Microsoft.AspNetCore.Mvc;
 
-public class ExternalRegisterViewModel
+namespace IdentityServer.ViewModels.Auth;
+
+public class ExternalRegisterViewModel : IdentityViewModel
 {
     public string Username { get; set; }
-    public string ReturnUrl { get; set; }
 }

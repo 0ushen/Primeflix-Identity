@@ -1,4 +1,6 @@
 using IdentityServer.Identity;
+using IdentityServer.Interfaces;
+using IdentityServer.Options;
 using IdentityServer.Services;
 using Microsoft.AspNetCore.ApiAuthorization.IdentityServer;
 using Microsoft.AspNetCore.Identity;
@@ -80,7 +82,10 @@ public class Startup
                 });
         });
 
-        services.AddTransient<EmailService>();
+        services.AddTransient<INotificationService, NotificationService>();
+        services.AddTransient<IEmailService, EmailService>();
+
+        services.Configure<EmailOptions>(Configuration.GetSection(EmailOptions.SectionName));
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

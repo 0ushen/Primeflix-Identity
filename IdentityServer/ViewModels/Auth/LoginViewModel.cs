@@ -1,10 +1,11 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityServer.ViewModels.Auth;
 
-public class LoginViewModel
+public class LoginViewModel : IdentityViewModel
 {
     [Required]
     public string Username { get; set; }
@@ -12,8 +13,6 @@ public class LoginViewModel
     [MaxLength(100, ErrorMessage = "Max length exceeded")]
     [Required]
     public string Password { get; set; }
-    [Required]
-    public string ReturnUrl { get; set; }
 
     [DisplayName("Remember me")]
     public bool StaySignedIn { get; set; }

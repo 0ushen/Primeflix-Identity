@@ -1,8 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityServer.ViewModels.Auth;
 
-public class RegisterViewModel
+public class RegisterViewModel : IdentityViewModel
 {
     [Required]
     public string Username { get; set; }
@@ -17,7 +18,6 @@ public class RegisterViewModel
     [DataType(DataType.Password)]
     [Compare("Password")]
     public string ConfirmPassword { get; set; }
-    public string ReturnUrl { get; set; }
     [Required]
     public bool AgreeTerms { get; set; }
 }

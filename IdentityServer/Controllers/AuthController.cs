@@ -1,11 +1,11 @@
 ﻿using System.Security.Claims;
 using Duende.IdentityServer.Services;
+using IdentityServer.Extensions;
 using IdentityServer.Identity;
-using IdentityServer.Services;
+using IdentityServer.Interfaces;
 using IdentityServer.ViewModels.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using IdentityResult = IdentityServer.Enums.IdentityResult;
 
 namespace IdentityServer.Controllers;
 
@@ -14,18 +14,18 @@ public class AuthController : Controller
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IIdentityServerInteractionService _interactionService;
-    private readonly EmailService _emailService;
+    private readonly INotificationService _notificationService;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         IIdentityServerInteractionService interactionService,
-        EmailService emailService)
+        INotificationService notificationService)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _interactionService = interactionService;
-        _emailService = emailService;
+        _notificationService = notificationService;
     }
 
     [HttpGet]
@@ -189,7 +189,6 @@ public class AuthController : Controller
         if (!ModelState.IsValid)
             return View("RetrievePassword", model);
 
-        bool succeeded;
         var vm = new RetrievePasswordResultViewModel
         {
             ReturnUrl = model.ReturnUrl
@@ -199,31 +198,81 @@ public class AuthController : Controller
 
         try
         {
-
-            if (user != null)
-            {
-                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-
-                var url = Url.Action(nameof(RetrievePassword), "Auth", new {userId = user.Id, token = token});
-
-                var emailSent = _emailService.SendChangePasswordLink(user.Email, url);
-
-                if (!emailSent)
-                    throw new Exception($"Change password email could not be sent to {user.Email}");
-
-                succeeded = true;
-            }
-            else
-            {
+            if (user == null)
                 return View("RetrievePasswordResult", vm);
-            }
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var url = Url.AbsoluteAction(nameof(ResetPassword), "Auth", new
+            {
+                userId = user.Id, 
+                token,
+                returnUrl = model.ReturnUrl
+            });
+
+            await _notificationService.SendChangePasswordLinkAsync(user.Email, url);
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            succeeded = false;
             ModelState.AddModelError(string.Empty, $"An error occured while retrieving user's password");
+
+            return View("RetrievePassword", model);
         }
 
-        return !succeeded ? View("RetrievePassword", model) : View("RetrievePasswordResult", vm);
+        return View("RetrievePasswordResult", vm);
+    }
+
+    [HttpGet]
+    public async Task<ActionResult> ResetPassword(string userId, string token, string returnUrl)
+    {
+        if (string.IsNullOrEmpty(token))
+            return NotFound();
+
+        var user = await _userManager.FindByIdAsync(userId);
+
+        if (user == null)
+            return NotFound();
+
+        var model = new ResetPasswordViewModel
+        {
+            UserId = userId,
+            Token = token
+        };
+
+        return View(model);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> ResetPassword(ResetPasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(model);
+
+        try
+        {
+            var user = await _userManager.FindByIdAsync(model.UserId.ToString());
+
+            if (user == null)
+                throw new Exception($"Cant find user with id {model.UserId}");
+
+            var result = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
+
+            if (result.Succeeded)
+            {
+                return View("ResetPasswordResult", new ResetPasswordResultViewModel
+                {
+                    ReturnUrl = model.ReturnUrl
+                });
+            }
+
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(string.Empty, error.Description);
+
+        }
+        catch (Exception e)
+        {
+            ModelState.AddModelError(string.Empty, "There was an error durring the password reset");
+        }
+
+        return View(model);
     }
 }
