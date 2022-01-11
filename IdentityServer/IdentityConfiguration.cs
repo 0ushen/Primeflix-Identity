@@ -39,7 +39,7 @@ public static class IdentityConfiguration
             {
                 ClientId = "Primeflix",
                 RequireClientSecret = false,
-                AllowedCorsOrigins = new List<string> {"http://localhost:4200", "https://localhost:4200"},
+                AllowedCorsOrigins = new List<string> { "http://localhost:4200" },
                 Properties = new Dictionary<string, string>
                 {
                     {ApplicationProfilesPropertyNames.Profile, ApplicationProfiles.SPA}
