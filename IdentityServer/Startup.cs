@@ -20,16 +20,13 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         if (Configuration.GetValue<bool>("UseInMemoryDatabase"))
-        {
             services.AddDbContext<IdentityAppDbContext>(options =>
                 options.UseInMemoryDatabase("CleanArchitectureDb"));
-        }
         else
-        {
             services.AddDbContext<IdentityAppDbContext>(options =>
                 options.UseSqlServer(
-                    Configuration.GetConnectionString("DefaultConnection"), b => b.MigrationsAssembly(typeof(IdentityAppDbContext).Assembly.FullName)));
-        }
+                    Configuration.GetConnectionString("DefaultConnection"),
+                    b => b.MigrationsAssembly(typeof(IdentityAppDbContext).Assembly.FullName)));
 
         services.AddIdentity<ApplicationUser, IdentityRole>(config =>
             {
@@ -51,10 +48,10 @@ public class Startup
         services.AddIdentityServer()
             .AddApiAuthorization<ApplicationUser, IdentityAppDbContext>(opts =>
             {
-                opts.ApiResources = new ApiResourceCollection(IdentityServer.Configuration.GetApis());
-                opts.Clients = new ClientCollection(IdentityServer.Configuration.GetClients());
+                opts.ApiResources = new ApiResourceCollection(IdentityConfiguration.GetApis());
+                opts.Clients = new ClientCollection(IdentityConfiguration.GetClients());
                 opts.IdentityResources =
-                    new IdentityResourceCollection(IdentityServer.Configuration.GetIdentityResources());
+                    new IdentityResourceCollection(IdentityConfiguration.GetIdentityResources());
             })
             .AddDeveloperSigningCredential();
 
@@ -77,8 +74,8 @@ public class Startup
                 builder =>
                 {
                     builder.AllowAnyMethod()
-                           .AllowAnyHeader()   
-                           .WithOrigins("http://localhost:4200");
+                        .AllowAnyHeader()
+                        .WithOrigins(Configuration["ClientUrl"]);
                 });
         });
 
@@ -114,8 +111,8 @@ public class Startup
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllerRoute(
-                name: "default",
-                pattern: "{controller}/{action=Index}/{id?}");
+                "default",
+                "{controller}/{action=Index}/{id?}");
         });
     }
 }
