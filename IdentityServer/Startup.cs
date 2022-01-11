@@ -10,22 +10,25 @@ namespace IdentityServer;
 
 public class Startup
 {
-    public Startup(IConfiguration configuration)
+    private readonly IConfiguration _configuration;
+    private readonly IWebHostEnvironment _environment;
+
+    public Startup(IConfiguration configuration, IWebHostEnvironment environment)
     {
-        Configuration = configuration;
+        _configuration = configuration;
+        _environment = environment;
     }
 
-    private IConfiguration Configuration { get; }
 
     public void ConfigureServices(IServiceCollection services)
     {
-        if (Configuration.GetValue<bool>("UseInMemoryDatabase"))
+        if (_configuration.GetValue<bool>("UseInMemoryDatabase"))
             services.AddDbContext<IdentityAppDbContext>(options =>
                 options.UseInMemoryDatabase("CleanArchitectureDb"));
         else
             services.AddDbContext<IdentityAppDbContext>(options =>
                 options.UseSqlServer(
-                    Configuration.GetConnectionString("DefaultConnection"),
+                    _configuration.GetConnectionString("DefaultConnection"),
                     b => b.MigrationsAssembly(typeof(IdentityAppDbContext).Assembly.FullName)));
 
         services.AddIdentity<ApplicationUser, IdentityRole>(config =>
@@ -48,18 +51,29 @@ public class Startup
         services.AddIdentityServer()
             .AddApiAuthorization<ApplicationUser, IdentityAppDbContext>(opts =>
             {
-                opts.ApiResources = new ApiResourceCollection(IdentityConfiguration.GetApis());
-                opts.Clients = new ClientCollection(IdentityConfiguration.GetClients());
-                opts.IdentityResources =
-                    new IdentityResourceCollection(IdentityConfiguration.GetIdentityResources());
+                if (_environment.IsProduction())
+                {
+                    opts.ApiResources = new ApiResourceCollection(IdentityConfigurationProduction.GetApis());
+                    opts.Clients = new ClientCollection(IdentityConfigurationProduction.GetClients());
+                    opts.IdentityResources =
+                        new IdentityResourceCollection(IdentityConfigurationProduction.GetIdentityResources());
+                }
+                else
+                {
+                    opts.ApiResources = new ApiResourceCollection(IdentityConfiguration.GetApis());
+                    opts.Clients = new ClientCollection(IdentityConfiguration.GetClients());
+                    opts.IdentityResources =
+                        new IdentityResourceCollection(IdentityConfiguration.GetIdentityResources());
+                }
+
             })
             .AddDeveloperSigningCredential();
 
         services.AddAuthentication()
             .AddGoogle(googleOptions =>
             {
-                googleOptions.ClientId = Configuration["Authentication:Google:ClientId"];
-                googleOptions.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
+                googleOptions.ClientId = _configuration["Authentication:Google:ClientId"];
+                googleOptions.ClientSecret = _configuration["Authentication:Google:ClientSecret"];
             });
 
         services.AddDatabaseDeveloperPageExceptionFilter();
@@ -75,14 +89,14 @@ public class Startup
                 {
                     builder.AllowAnyMethod()
                         .AllowAnyHeader()
-                        .WithOrigins(Configuration["ClientUrl"]);
+                        .WithOrigins(_configuration["ClientUrl"]);
                 });
         });
 
         services.AddTransient<INotificationService, NotificationService>();
         services.AddTransient<IEmailService, EmailService>();
 
-        services.Configure<EmailOptions>(Configuration.GetSection(EmailOptions.SectionName));
+        services.Configure<EmailOptions>(_configuration.GetSection(EmailOptions.SectionName));
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
