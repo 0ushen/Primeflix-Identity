@@ -39,15 +39,15 @@ public static class IdentityConfigurationProduction
             {
                 ClientId = "Primeflix",
                 RequireClientSecret = false,
-                AllowedCorsOrigins = new List<string> { "https://primeflix-client.azurewebsites.net" },
+                AllowedCorsOrigins = new List<string> { "https://brave-bay-07a00b203.azurestaticapps.net" },
                 Properties = new Dictionary<string, string>
                 {
                     {ApplicationProfilesPropertyNames.Profile, ApplicationProfiles.SPA}
                 },
                 AllowedGrantTypes = GrantTypes.Code,
                 RequirePkce = true,
-                RedirectUris = {"https://primeflix-client.azurewebsites.net/authentication/login-callback"},
-                PostLogoutRedirectUris = {"https://primeflix-client.azurewebsites.net/authentication/logout-callback"},
+                RedirectUris = {"https://brave-bay-07a00b203.azurestaticapps.net/authentication/login-callback"},
+                PostLogoutRedirectUris = {"https://brave-bay-07a00b203.azurestaticapps.net/authentication/logout-callback"},
                 AllowedScopes =
                 {
                     IdentityServerConstants.StandardScopes.OpenId,
